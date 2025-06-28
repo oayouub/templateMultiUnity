@@ -50,7 +50,15 @@ namespace SteamLobbyTutorial
 
         public void HostLobby()
         {
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, networkManager.maxConnections);
+            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, networkManager.maxConnections);
+        }
+        
+        public void ShowLobbyList()
+        {
+            if (panelSwapper != null)
+            {
+                panelSwapper.SwapPanel("LobbiesPanel");
+            }
         }
 
         void OnLobbyCreated(LobbyCreated_t callback)
@@ -64,8 +72,21 @@ namespace SteamLobbyTutorial
             Debug.Log("Lobby successfully created. Lobby ID: " + callback.m_ulSteamIDLobby);
             networkManager.StartHost();
 
-            SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey, SteamUser.GetSteamID().ToString());
+            CSteamID lobbyCSteamID = new CSteamID(callback.m_ulSteamIDLobby);
+            
+            // Métadonnées obligatoires pour que le lobby soit trouvé par la recherche
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, HostAddressKey, SteamUser.GetSteamID().ToString());
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, "appid", SteamUtils.GetAppID().ToString());
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, "game_type", "mirror_steam_lobby");
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, "lobby_type", "public");
+            
+            // Métadonnées optionnelles pour plus d'informations
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, "host_name", SteamFriends.GetPersonaName());
+            SteamMatchmaking.SetLobbyData(lobbyCSteamID, "version", Application.version);
+            
             lobbyID = callback.m_ulSteamIDLobby;
+            
+            Debug.Log("Lobby metadata set successfully");
         }
 
         void OnGameLobbyJoinRequested(GameLobbyJoinRequested_t callback)
